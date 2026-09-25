@@ -1,0 +1,149 @@
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
+import { LoadingPage } from './components/ui/Loading';
+import AppLayout from './components/layout/AppLayout';
+
+// Lazy-loaded pages
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+
+function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<LoadingPage />}>
+      {children}
+    </Suspense>
+  );
+}
+
+const router = createBrowserRouter([
+  // Public routes
+  {
+    path: '/login',
+    element: (
+      <PublicRoute>
+        <SuspenseWrapper>
+          <LoginPage />
+        </SuspenseWrapper>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/register',
+    element: (
+      <PublicRoute>
+        <SuspenseWrapper>
+          <RegisterPage />
+        </SuspenseWrapper>
+      </PublicRoute>
+    ),
+  },
+
+  // Protected routes
+  {
+    path: '/app',
+    element: (
+      <ProtectedRoute>
+        <SuspenseWrapper>
+          <AppLayout />
+        </SuspenseWrapper>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/app/dashboard" replace />,
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <SuspenseWrapper>
+            <DashboardPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'accounts',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="حساب‌های معاملاتی" description="مدیریت حساب‌های معاملاتی و فازهای آن‌ها به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'trades',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="معاملات" description="لیست معاملات و جزئیات آن‌ها به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'journal',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="ژورنال معاملاتی" description="ثبت و مدیریت ژورنال معاملات به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'analytics',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="آنالیتیکس" description="تحلیل‌های پیشرفته عملکرد معاملاتی به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'calendar',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="تقویم معاملاتی" description="نمای تقویمی معاملات به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'reviews',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="بازبینی‌ها" description="بازبینی روزانه، هفتگی و ماهانه به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'import',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="ورود اطلاعات" description="وارد کردن معاملات از MT4/MT5 به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'settings',
+        element: (
+          <SuspenseWrapper>
+            <PlaceholderPage title="تنظیمات" description="تنظیمات حساب کاربری به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+    ],
+  },
+
+  // Root redirect
+  {
+    path: '/',
+    element: <Navigate to="/app/dashboard" replace />,
+  },
+
+  // Catch-all
+  {
+    path: '*',
+    element: <Navigate to="/app/dashboard" replace />,
+  },
+]);
+
+export function AppRouter() {
+  return <RouterProvider router={router} />;
+}
