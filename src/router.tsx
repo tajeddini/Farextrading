@@ -8,6 +8,8 @@ import AppLayout from './components/layout/AppLayout';
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
+const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage'));
+const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
@@ -68,7 +70,15 @@ const router = createBrowserRouter([
         path: 'accounts',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="حساب‌های معاملاتی" description="مدیریت حساب‌های معاملاتی و فازهای آن‌ها به زودی پیاده‌سازی می‌شود." />
+            <AccountsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'accounts/:accountId',
+        element: (
+          <SuspenseWrapper>
+            <AccountDetailPage />
           </SuspenseWrapper>
         ),
       },
