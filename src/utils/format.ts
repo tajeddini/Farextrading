@@ -122,3 +122,59 @@ export function parseNumber(value: string): number | null {
   if (!isValidNumber(value)) return null;
   return Number(value);
 }
+
+// --- Duration Formatting ---
+
+export function formatDuration(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined || seconds < 0) return '—';
+  
+  if (seconds < 60) {
+    return `${seconds} ثانیه`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (minutes < 60) {
+    return remainingSeconds > 0 
+      ? `${minutes}د ${remainingSeconds.toString().padStart(2, '0')}ث`
+      : `${minutes} دقیقه`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (hours < 24) {
+    return remainingMinutes > 0
+      ? `${hours}س ${remainingMinutes}د`
+      : `${hours} ساعت`;
+  }
+  
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  
+  return remainingHours > 0
+    ? `${days}ر ${remainingHours}س`
+    : `${days} روز`;
+}
+
+// --- Journal Status Helpers ---
+
+export function getJournalStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    not_started: 'شروع نشده',
+    in_progress: 'در حال تکمیل',
+    completed: 'تکمیل شده',
+  };
+  return labels[status] || status;
+}
+
+export function getRuleAdherenceLabel(value: string): string {
+  const labels: Record<string, string> = {
+    not_set: 'تنظیم نشده',
+    followed: 'رعایت شده',
+    partially_followed: 'تا حدی رعایت شده',
+    violated: 'نقض شده',
+  };
+  return labels[value] || value;
+}

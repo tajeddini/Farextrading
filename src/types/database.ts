@@ -66,6 +66,110 @@ export type TradeSource = 'mt4' | 'mt5' | 'manual';
 // --- Import Batch Status ---
 export type ImportBatchStatus = 'processing' | 'completed' | 'completed_with_warnings' | 'failed';
 
+// --- Journal Types ---
+export type RuleAdherence = 'followed' | 'partially_followed' | 'violated' | 'not_set';
+export type JournalStatus = 'not_started' | 'in_progress' | 'completed';
+
+// --- Strategy ---
+export interface Strategy {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Setup ---
+export interface Setup {
+  id: string;
+  user_id: string;
+  strategy_id: string | null;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Tag ---
+export interface Tag {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Mistake ---
+export interface Mistake {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Trade Journal ---
+export interface TradeJournal {
+  id: string;
+  trade_id: string;
+  user_id: string;
+  
+  // References
+  strategy_id: string | null;
+  setup_id: string | null;
+  
+  // Pre-Trade Plan
+  market_context: string | null;
+  market_bias: string | null;
+  timeframe: string | null;
+  important_levels: string | null;
+  confluences: string | null;
+  entry_reason: string | null;
+  expected_scenario: string | null;
+  invalidating_condition: string | null;
+  planned_risk_amount: number | null;
+  planned_risk_percentage: number | null;
+  planned_rr: number | null;
+  confidence: number | null;
+  checklist: Record<string, boolean> | null;
+  
+  // Psychology
+  emotion_before: string | null;
+  emotion_during: string | null;
+  emotion_after: string | null;
+  
+  // Execution
+  execution_quality: number | null;
+  rule_adherence: RuleAdherence;
+  rule_adherence_notes: string | null;
+  
+  // Post-Trade Review
+  what_went_well: string | null;
+  what_went_wrong: string | null;
+  lesson_learned: string | null;
+  post_trade_notes: string | null;
+  
+  // Status
+  status: JournalStatus;
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Trade with Journal ---
+export interface TradeWithJournal extends Trade {
+  journal?: TradeJournal | null;
+  tags?: Tag[];
+  mistakes?: { mistake: Mistake; notes: string | null }[];
+}
+
 // --- Trade ---
 export interface Trade {
   id: string;
@@ -167,6 +271,21 @@ export interface ImportBatchInsert {
 }
 export type ImportBatchUpdate = Partial<Omit<ImportBatch, 'id' | 'user_id' | 'created_at'>>;
 
+export type StrategyInsert = Omit<Strategy, 'id' | 'created_at' | 'updated_at'>;
+export type StrategyUpdate = Partial<Omit<Strategy, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export type SetupInsert = Omit<Setup, 'id' | 'created_at' | 'updated_at'>;
+export type SetupUpdate = Partial<Omit<Setup, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export type TagInsert = Omit<Tag, 'id' | 'created_at' | 'updated_at'>;
+export type TagUpdate = Partial<Omit<Tag, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export type MistakeInsert = Omit<Mistake, 'id' | 'created_at' | 'updated_at'>;
+export type MistakeUpdate = Partial<Omit<Mistake, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export type TradeJournalInsert = Omit<TradeJournal, 'id' | 'created_at' | 'updated_at'>;
+export type TradeJournalUpdate = Partial<Omit<TradeJournal, 'id' | 'trade_id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
 // --- Constants ---
 
 export const ACCOUNT_STATUSES: { value: AccountStatus; label: string }[] = [
@@ -225,4 +344,41 @@ export const IMPORT_BATCH_STATUSES: { value: ImportBatchStatus; label: string }[
   { value: 'completed', label: 'تکمیل شده' },
   { value: 'completed_with_warnings', label: 'تکمیل شده با هشدار' },
   { value: 'failed', label: 'ناموفق' },
+];
+
+export const RULE_ADHERENCE_OPTIONS: { value: RuleAdherence; label: string }[] = [
+  { value: 'not_set', label: 'تنظیم نشده' },
+  { value: 'followed', label: 'رعایت شده' },
+  { value: 'partially_followed', label: 'تا حدی رعایت شده' },
+  { value: 'violated', label: 'نقض شده' },
+];
+
+export const JOURNAL_STATUSES: { value: JournalStatus; label: string }[] = [
+  { value: 'not_started', label: 'شروع نشده' },
+  { value: 'in_progress', label: 'در حال تکمیل' },
+  { value: 'completed', label: 'تکمیل شده' },
+];
+
+export const EMOTIONS = [
+  'آرام',
+  'مطمئن',
+  'ترسیده',
+  'طمع‌کار',
+  'مضطرب',
+  'کلافه',
+  'هیجان‌زده',
+  'FOMO',
+  'انتقام‌جو',
+  'خنثی',
+];
+
+export const DEFAULT_CHECKLIST = [
+  { key: 'strategy_valid', label: 'استراتژی معتبر است؟' },
+  { key: 'setup_confirmed', label: 'ستاپ تأیید شده؟' },
+  { key: 'market_context_checked', label: 'کانتکست بازار بررسی شده؟' },
+  { key: 'risk_within_limit', label: 'ریسک در محدوده مجاز؟' },
+  { key: 'stop_loss_defined', label: 'حد ضرر مشخص شده؟' },
+  { key: 'take_profit_defined', label: 'حد سود مشخص شده؟' },
+  { key: 'entry_confirmed', label: 'شرط ورود تأیید شده؟' },
+  { key: 'emotional_state_ok', label: 'وضعیت روحی مناسب؟' },
 ];

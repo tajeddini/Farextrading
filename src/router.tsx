@@ -12,6 +12,8 @@ const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage'));
 const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const ImportPage = lazy(() => import('./pages/import/ImportPage'));
+const TradesPage = lazy(() => import('./pages/trades/TradesPage'));
+const TradeDetailPage = lazy(() => import('./pages/trades/TradeDetailPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -87,7 +89,15 @@ const router = createBrowserRouter([
         path: 'trades',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="معاملات" description="لیست معاملات و جزئیات آن‌ها به زودی پیاده‌سازی می‌شود." />
+            <TradesPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'trades/:tradeId',
+        element: (
+          <SuspenseWrapper>
+            <TradeDetailPage />
           </SuspenseWrapper>
         ),
       },

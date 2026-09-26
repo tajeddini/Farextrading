@@ -2,22 +2,24 @@
 
 ## وضعیت فعلی
 
-پروژه در فاز **MT4/MT5 Trade Import** تکمیل شده.
+پروژه در فاز **Trading Journal** تکمیل شده.
 - ✅ Supabase integration
-- ✅ Authentication (signup/login/logout/session)
-- ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches)
-- ✅ RLS policies
-- ✅ Application layout & routing
-- ✅ Theme system (dark/light)
-- ✅ Protected routes
-- ✅ Accounts management (list, create, edit, detail, archive, search, filter, sort)
-- ✅ Phases management (list, create, edit, status change)
-- ✅ **MT4/MT5 CSV Import (parser, normalizer, duplicate detection, preview, batch import)**
+- ✅ Authentication
+- ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches, strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes)
+- ✅ RLS policies (تمام جداول)
+- ✅ Accounts & Phases management
+- ✅ MT4/MT5 CSV Import
+- ✅ **Trading Journal (Pre-Trade Plan, Psychology, Rule Adherence, Post-Trade Review)**
+- ✅ **Strategy/Setup system**
+- ✅ **Tag system (many-to-many)**
+- ✅ **Mistake tracking (many-to-many)**
+- ✅ **Emotion tracking (before/during/after)**
+- ✅ **Persian Voice-to-Text (Web Speech API)**
+- ✅ Trade List with pagination, filters
+- ✅ Trade Detail with journal tabs
 - ✅ Toast notification system
-- ✅ Number/Currency/Date formatting utilities
-- ❌ Trade management UI (فاز بعدی)
-- ❌ Trading Journal (فاز بعدی)
 - ❌ Analytics (فاز بعدی)
+- ❌ Screenshot Storage (فاز بعدی)
 
 ## تکنولوژی‌ها
 
@@ -29,7 +31,7 @@
 | Backend | Supabase (PostgreSQL + Auth + Storage) |
 | Routing | React Router DOM v6 |
 | CSV Parser | papaparse |
-| Charts | Recharts (نصب شده، استفاده نشده) |
+| Speech-to-Text | Web Speech API (fa-IR) |
 | Testing | Vitest + @testing-library/react + jsdom |
 
 ## ساختار پروژه
@@ -41,43 +43,53 @@ src/
 │   ├── ui/                     # Button, Input, Select, Card, Badge, Loading, EmptyState, ErrorState, Modal, ConfirmDialog
 │   ├── accounts/               # AccountCard, AccountForm, AccountFilters, AccountSummary
 │   ├── account-phases/         # PhaseCard, PhaseForm
+│   ├── journal/
+│   │   └── VoiceInput.tsx      # Persian voice-to-text button
 │   └── ProtectedRoute.tsx
 ├── contexts/
 │   ├── AuthContext.tsx          # useAuth()
 │   ├── ThemeContext.tsx         # useTheme()
 │   └── ToastContext.tsx         # useToast()
 ├── pages/
-│   ├── auth/LoginPage.tsx
-│   ├── auth/RegisterPage.tsx
-│   ├── dashboard/DashboardPage.tsx
-│   ├── accounts/AccountsPage.tsx
-│   ├── accounts/AccountDetailPage.tsx
-│   ├── import/ImportPage.tsx   # MT4/MT5 import workflow
-│   └── PlaceholderPage.tsx
+│   ├── auth/
+│   ├── dashboard/
+│   ├── accounts/
+│   ├── import/ImportPage.tsx
+│   └── trades/
+│       ├── TradesPage.tsx       # Trade list with pagination/filters
+│       └── TradeDetailPage.tsx  # Trade detail + full journal
 ├── services/
 │   ├── supabase.ts
 │   ├── profiles.ts
 │   ├── accounts.ts
 │   ├── accountPhases.ts
-│   ├── trades.ts               # Trade CRUD
-│   └── importBatches.ts        # Import batch tracking
+│   ├── trades.ts
+│   ├── importBatches.ts
+│   ├── strategies.ts
+│   ├── setups.ts
+│   ├── tags.ts
+│   ├── mistakes.ts
+│   ├── tradeJournals.ts
+│   └── speechToText.ts         # Web Speech API abstraction
 ├── types/database.ts
 ├── utils/
 │   ├── auth-errors.ts
-│   ├── format.ts               # formatCurrency, formatDate, etc.
-│   ├── csv-parser.ts           # CSV parsing with papaparse
-│   ├── trade-normalizer.ts     # Normalize MT4/MT5 data
-│   └── duplicate-detector.ts   # Duplicate detection
+│   ├── format.ts
+│   ├── csv-parser.ts
+│   ├── trade-normalizer.ts
+│   └── duplicate-detector.ts
 ├── App.tsx
 ├── main.tsx
 ├── router.tsx
 └── index.css
 
 supabase/migrations/
-├── 001_initial_schema.sql      # profiles, trading_accounts, account_phases
-├── 002_rls_policies.sql        # RLS for above tables
-├── 003_trade_import.sql        # trades, import_batches
-└── 004_trade_import_rls.sql    # RLS for trades, import_batches
+├── 001_initial_schema.sql
+├── 002_rls_policies.sql
+├── 003_trade_import.sql
+├── 004_trade_import_rls.sql
+├── 005_trading_journal.sql     # strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes
+└── 006_trading_journal_rls.sql # RLS for journal tables
 ```
 
 ## Routes
@@ -86,10 +98,11 @@ supabase/migrations/
 /login                    → Public
 /register                 → Public
 /app/dashboard            → Protected
-/app/accounts             → Protected (Accounts list)
-/app/accounts/:accountId  → Protected (Account detail + phases)
-/app/import               → Protected (MT4/MT5 import workflow)
-/app/trades               → Protected (placeholder)
+/app/accounts             → Protected
+/app/accounts/:accountId  → Protected
+/app/import               → Protected (MT4/MT5 import)
+/app/trades               → Protected (Trade list)
+/app/trades/:tradeId      → Protected (Trade detail + journal)
 /app/journal              → Protected (placeholder)
 /app/analytics            → Protected (placeholder)
 /app/calendar             → Protected (placeholder)
@@ -99,118 +112,59 @@ supabase/migrations/
 
 ## Database Schema
 
-### profiles
-- `id` UUID PK → auth.users(id)
-- `display_name`, `avatar_url`, `timezone`, `default_currency`
+### جداول اصلی
+- **profiles**: پروفایل کاربر
+- **trading_accounts**: حساب‌های معاملاتی
+- **account_phases**: فازهای حساب
+- **trades**: معاملات (objective imported data)
+- **import_batches**: تاریخچه import
 
-### trading_accounts
-- `id` UUID PK
-- `user_id` FK → profiles(id)
-- `name`, `broker`, `platform`, `account_number_label`
-- `currency`, `initial_balance`, `current_balance`
-- `status` ENUM: active | passed | failed | funded | archived
+### جداول Journal
+- **strategies**: استراتژی‌های کاربر
+- **setups**: ستاپ‌ها (optional strategy relationship)
+- **tags**: تگ‌های کاربر
+- **mistakes**: اشتباهات تعریف‌شده
+- **trade_journals**: ژورنال هر معامله (pre-trade, psychology, review)
+- **trade_tags**: many-to-many بین trade و tag
+- **trade_mistakes**: many-to-many بین trade و mistake
 
-### account_phases
-- `id` UUID PK
-- `account_id` FK → trading_accounts(id)
-- `name`, `phase_type` ENUM, `status` ENUM
-- `starting_balance`, `target_balance`, `maximum_drawdown`, `daily_drawdown_limit`
-- `start_date`, `end_date`
+## معماری Trade ↔ Journal
 
-### trades
-- `id` UUID PK
-- `user_id` FK → profiles(id)
-- `account_id` FK → trading_accounts(id)
-- `phase_id` FK → account_phases(id) (nullable)
-- `import_batch_id` FK → import_batches(id) (nullable)
-- `ticket`, `position_id` (identification)
-- `symbol`, `side` ENUM (buy/sell), `volume`
-- `entry_datetime`, `entry_price`, `stop_loss`, `take_profit`
-- `exit_datetime`, `exit_price`
-- `commission`, `swap`, `profit`
-- `comment`, `magic_number`
-- `source` ENUM (mt4/mt5/manual), `source_file`
-- `duration_seconds` (auto-calculated)
+### Trade (Objective Data)
+داده‌های عینی از بروکر import شده:
+- ticket, position_id, symbol, side, volume
+- entry/exit datetime, price
+- commission, swap, profit
+- duration_seconds (auto-calculated)
+- source, source_file, import_batch_id
 
-### import_batches
-- `id` UUID PK
-- `user_id` FK → profiles(id)
-- `account_id` FK → trading_accounts(id)
-- `phase_id` FK → account_phases(id) (nullable)
-- `source` ENUM, `file_name`, `file_size`
-- `total_rows`, `valid_rows`, `invalid_rows`, `duplicate_rows`, `imported_rows`
-- `status` ENUM (processing/completed/completed_with_warnings/failed)
-- `error_message`, `parser_version`
-- `created_at`, `completed_at`
+### Trade Journal (Subjective Data)
+داده‌های ذهنی trader:
+- strategy_id, setup_id
+- market_context, market_bias, timeframe, confluences
+- entry_reason, expected_scenario, invalidating_condition
+- planned_risk_amount/percentage, planned_rr, confidence
+- checklist (JSONB)
+- emotion_before/during/after
+- execution_quality, rule_adherence, rule_adherence_notes
+- what_went_well, what_went_wrong, lesson_learned, post_trade_notes
+- status (not_started/in_progress/completed)
+
+### جداسازی مهم
+Trade data هرگز توسط journal تغییر نمی‌کند. Journal فقط metadata اضافی اضافه می‌کند.
 
 ## RLS Rules
 
-- **profiles**: auth.uid() = id
-- **trading_accounts**: auth.uid() = user_id
-- **account_phases**: ownership derived through parent account
-- **trades**: auth.uid() = user_id
-- **import_batches**: auth.uid() = user_id
+- **strategies/setups/tags/mistakes**: auth.uid() = user_id
+- **trade_journals**: auth.uid() = user_id
+- **trade_tags/trade_mistakes**: ownership از طریق trade.user_id
 
-## Import Architecture
+## Voice-to-Text
 
-### Workflow
-1. Select Account & Phase
-2. Upload CSV file
-3. Detect format & map columns
-4. Normalize & validate
-5. Detect duplicates
-6. Preview
-7. Confirm & batch import
-8. Show result
-
-### Supported Formats
-- MT4 CSV exports (standard and alternate headers)
-- MT5 CSV exports (basic — deal aggregation not yet implemented)
-- Comma, semicolon, tab delimiters
-- UTF-8 with/without BOM
-
-### Column Mapping
-Automatic mapping with aliases:
-- Ticket/Order → ticket
-- Symbol/Instrument → symbol
-- Type/Direction → side
-- Volume/Lots → volume
-- Open Time/Entry Time → entry_datetime
-- Open Price/Price → entry_price
-- Close Time/Exit Time → exit_datetime
-- Close Price → exit_price
-- Profit/P/L → profit
-- Commission, Swap, Comment, Magic Number
-
-### Duplicate Detection
-Strategy:
-1. If ticket available: `ticket + symbol + entry_datetime`
-2. Fallback: composite fingerprint of all key fields
-3. User can choose to skip duplicates (default)
-
-### Batch Import
-- Chunk size: 500 records per batch
-- Transaction-safe
-- Progress tracking via import_batches table
-
-## Validation Rules
-
-### Account Form
-- name: required, max 100 chars
-- currency: required
-- initial_balance: numeric, non-negative
-- current_balance: numeric, non-negative
-
-### Phase Form
-- name: required, max 100 chars
-- phase_type: required
-- status: required
-- starting_balance: numeric, non-negative
-- end_date >= start_date
-
-### Trade Import
-Required fields: symbol, side, volume, entry_datetime, entry_price, exit_datetime, exit_price, profit
-Optional: ticket, position_id, stop_loss, take_profit, commission, swap, comment, magic_number
+- Web Speech API abstraction
+- Language: fa-IR (Persian)
+- Graceful degradation برای مرورگرهای بدون پشتیبانی
+- قابل جایگزینی با provider دیگر در آینده
 
 ## دستورات
 
@@ -218,15 +172,8 @@ Optional: ticket, position_id, stop_loss, take_profit, commission, swap, comment
 npm run dev        # Development server
 npm run build      # Production build
 npm run typecheck  # TypeScript check
-npx vitest         # Run tests (watch)
-npx vitest run     # Run tests once
+npx vitest run     # Run tests
 ```
-
-## Testing
-
-- **Framework**: Vitest + @testing-library/react + jsdom
-- **Test files**: `src/**/*.test.{ts,tsx}`
-- **Coverage**: csv-parser, trade-normalizer, duplicate-detector, format, auth-errors, database constants
 
 ## Environment Variables
 
@@ -237,29 +184,11 @@ VITE_SUPABASE_ANON_KEY=
 
 ## قوانین مهم
 
-1. **هرگز** service-role key را در frontend استفاده نکنید
-2. **هرگز** .env را commit نکنید
-3. تمام جداول باید RLS داشته باشند
-4. تمام داده‌های user-owned باید `user_id` داشته باشند
-5. Trade ها immutable هستند (فقط soft delete در آینده)
-6. Timestamps به صورت TIMESTAMPTZ ذخیره می‌شوند
-7. زبان UI فارسی است
-8. RTL layout استفاده می‌شود
-9. حساب‌ها آرشیو می‌شوند نه حذف
-10. اعداد مالی در database به صورت NUMERIC ذخیره می‌شوند
-11. Import نباید داده‌های موجود را overwrite کند
-12. Duplicate detection mandatory است
-13. Batch import با chunk size 500
-
-## Known Limitations
-
-### MT5 Import
-- Deal aggregation (multiple deals → one trade) not yet implemented
-- Only complete trade records are imported
-- Complex MT5 exports may require manual intervention
-- Architecture allows future expansion
-
-### CSV Formats
-- Tested with standard MT4/MT5 exports
-- Some broker-specific formats may need custom mapping
-- XLSX not yet supported (only CSV)
+1. Trade data (broker) ≠ Journal data (trader) — هرگز mix نکنید
+2. Journal قابل ذخیره partial است (status: not_started → in_progress → completed)
+3. Tags و Mistakes many-to-many هستند (نه comma-separated)
+4. Emotions structured هستند (قبل/حین/بعد)
+5. Rule Adherence: followed/partially_followed/violated/not_set
+6. Voice-to-text: Web Speech API abstraction — قابل تعویض
+7. duration_seconds auto-calculated توسط trigger
+8. RLS در سطح database — نه فقط frontend
