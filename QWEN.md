@@ -110,7 +110,18 @@ supabase/migrations/
 npm run dev        # Development server
 npm run build      # Production build
 npm run typecheck  # TypeScript check
+npx vitest         # Run tests
+npx vitest run     # Run tests once (no watch)
 ```
+
+## Testing
+
+- **Framework**: Vitest + @testing-library/react + jsdom
+- **Config**: `vitest.config.ts`
+- **Test files**: `src/**/*.test.{ts,tsx}`
+- **Setup**: `src/test/setup.ts`
+- **Utils**: `src/test/test-utils.tsx`
+- **Existing tests**: `src/utils/auth-errors.test.ts`, `src/types/database.test.ts`
 
 ## Environment Variables
 
