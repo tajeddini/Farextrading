@@ -11,6 +11,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage'));
 const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'));
 const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
+const ImportPage = lazy(() => import('./pages/import/ImportPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -126,7 +127,7 @@ const router = createBrowserRouter([
         path: 'import',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="ورود اطلاعات" description="وارد کردن معاملات از MT4/MT5 به زودی پیاده‌سازی می‌شود." />
+            <ImportPage />
           </SuspenseWrapper>
         ),
       },

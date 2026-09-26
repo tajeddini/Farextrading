@@ -57,16 +57,82 @@ export interface AccountPhase {
   updated_at: string;
 }
 
-// --- Future: Trade (placeholder for now) ---
+// --- Trade Side ---
+export type TradeSide = 'buy' | 'sell';
 
+// --- Trade Source ---
+export type TradeSource = 'mt4' | 'mt5' | 'manual';
+
+// --- Import Batch Status ---
+export type ImportBatchStatus = 'processing' | 'completed' | 'completed_with_warnings' | 'failed';
+
+// --- Trade ---
 export interface Trade {
   id: string;
-  phase_id: string;
-  account_id: string;
   user_id: string;
-  // Will be fully defined in Phase 3
+  account_id: string;
+  phase_id: string | null;
+  import_batch_id: string | null;
+  
+  // Identification
+  ticket: string | null;
+  position_id: string | null;
+  
+  // Trade details
+  symbol: string;
+  side: TradeSide;
+  volume: number;
+  
+  // Entry
+  entry_datetime: string;
+  entry_price: number;
+  stop_loss: number | null;
+  take_profit: number | null;
+  
+  // Exit
+  exit_datetime: string;
+  exit_price: number;
+  
+  // Financial
+  commission: number;
+  swap: number;
+  profit: number;
+  
+  // Metadata
+  comment: string | null;
+  magic_number: number | null;
+  
+  // Source
+  source: TradeSource;
+  source_file: string | null;
+  
+  // Duration
+  duration_seconds: number | null;
+  
+  // Timestamps
   created_at: string;
   updated_at: string;
+}
+
+// --- Import Batch ---
+export interface ImportBatch {
+  id: string;
+  user_id: string;
+  account_id: string;
+  phase_id: string | null;
+  source: TradeSource;
+  file_name: string;
+  file_size: number | null;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  duplicate_rows: number;
+  imported_rows: number;
+  status: ImportBatchStatus;
+  error_message: string | null;
+  parser_version: string | null;
+  created_at: string;
+  completed_at: string | null;
 }
 
 // --- Insert/Update types ---
@@ -79,6 +145,27 @@ export type TradingAccountUpdate = Partial<Omit<TradingAccount, 'id' | 'user_id'
 
 export type AccountPhaseInsert = Omit<AccountPhase, 'id' | 'created_at' | 'updated_at'>;
 export type AccountPhaseUpdate = Partial<Omit<AccountPhase, 'id' | 'account_id' | 'created_at' | 'updated_at'>>;
+
+export type TradeInsert = Omit<Trade, 'id' | 'created_at' | 'updated_at' | 'duration_seconds'>;
+export type TradeUpdate = Partial<Omit<Trade, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export interface ImportBatchInsert {
+  user_id: string;
+  account_id: string;
+  phase_id: string | null;
+  source: TradeSource;
+  file_name: string;
+  file_size: number | null;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  duplicate_rows: number;
+  imported_rows: number;
+  status: ImportBatchStatus;
+  error_message?: string | null;
+  parser_version?: string | null;
+}
+export type ImportBatchUpdate = Partial<Omit<ImportBatch, 'id' | 'user_id' | 'created_at'>>;
 
 // --- Constants ---
 
@@ -120,4 +207,22 @@ export const TIMEZONES = [
   'Asia/Shanghai',
   'Australia/Sydney',
   'UTC',
+];
+
+export const TRADE_SIDES: { value: TradeSide; label: string }[] = [
+  { value: 'buy', label: 'خرید' },
+  { value: 'sell', label: 'فروش' },
+];
+
+export const TRADE_SOURCES: { value: TradeSource; label: string }[] = [
+  { value: 'mt4', label: 'MT4' },
+  { value: 'mt5', label: 'MT5' },
+  { value: 'manual', label: 'دستی' },
+];
+
+export const IMPORT_BATCH_STATUSES: { value: ImportBatchStatus; label: string }[] = [
+  { value: 'processing', label: 'در حال پردازش' },
+  { value: 'completed', label: 'تکمیل شده' },
+  { value: 'completed_with_warnings', label: 'تکمیل شده با هشدار' },
+  { value: 'failed', label: 'ناموفق' },
 ];
