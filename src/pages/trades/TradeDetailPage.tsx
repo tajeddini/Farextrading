@@ -7,7 +7,8 @@ import { getStrategies } from '../../services/strategies';
 import { getSetups } from '../../services/setups';
 import { getTags, setTradeTags } from '../../services/tags';
 import { getMistakes, setTradeMistakes } from '../../services/mistakes';
-import type { TradeWithJournal, Strategy, Setup, Tag, Mistake, TradeJournalUpdate, RuleAdherence, JournalStatus } from '../../types/database';
+import { getTradeImages, deleteTradeImage } from '../../services/tradeImages';
+import type { TradeWithJournal, TradeImage, Strategy, Setup, Tag, Mistake, TradeJournalUpdate, RuleAdherence, JournalStatus } from '../../types/database';
 import { RULE_ADHERENCE_OPTIONS, EMOTIONS, DEFAULT_CHECKLIST } from '../../types/database';
 import { Card, CardTitle, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -18,8 +19,10 @@ import { Loading } from '../../components/ui/Loading';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { formatCurrency, formatDateTime, formatDuration, getJournalStatusLabel, getRuleAdherenceLabel } from '../../utils/format';
 import { VoiceInput } from '../../components/journal/VoiceInput';
+import { TradeImageUpload } from '../../components/trades/TradeImageUpload';
+import { TradeImageViewer } from '../../components/trades/TradeImageViewer';
 
-type Tab = 'info' | 'pretrade' | 'psychology' | 'review';
+type Tab = 'info' | 'pretrade' | 'psychology' | 'review' | 'screenshots';
 
 export default function TradeDetailPage() {
   const { tradeId } = useParams<{ tradeId: string }>();
@@ -44,6 +47,9 @@ export default function TradeDetailPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedMistakes, setSelectedMistakes] = useState<{ id: string; notes?: string }[]>([]);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+
+  // Screenshots state
+  const [images, setImages] = useState<TradeImage[]>([]);
 
   const fetchTrade = useCallback(async () => {
     if (!user || !tradeId) return;
@@ -117,10 +123,21 @@ export default function TradeDetailPage() {
     }
   }, [user]);
 
+  const fetchImages = useCallback(async () => {
+    if (!tradeId) return;
+    try {
+      const imgs = await getTradeImages(tradeId);
+      setImages(imgs);
+    } catch (error) {
+      console.error('Failed to fetch images:', error);
+    }
+  }, [tradeId]);
+
   useEffect(() => {
     fetchTrade();
     fetchReferenceData();
-  }, [fetchTrade, fetchReferenceData]);
+    fetchImages();
+  }, [fetchTrade, fetchReferenceData, fetchImages]);
 
   const handleSaveJournal = async () => {
     if (!user || !trade) return;
@@ -166,6 +183,21 @@ export default function TradeDetailPage() {
     setJournalData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = (image: TradeImage) => {
+    setImages(prev => [...prev, image]);
+  };
+
+  const handleImageDelete = async (imageId: string) => {
+    if (!user) return;
+    try {
+      await deleteTradeImage(imageId, user.id);
+      setImages(prev => prev.filter(img => img.id !== imageId));
+      toast.success('تصویر با موفقیت حذف شد');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'خطا در حذف تصویر');
+    }
+  };
+
   if (loading) return <Loading message="در حال بارگذاری..." />;
   if (error || !trade) return <ErrorState message={error || 'معامله یافت نشد'} retry={() => navigate('/app/trades')} />;
 
@@ -205,6 +237,9 @@ export default function TradeDetailPage() {
         <TabButton active={activeTab === 'pretrade'} onClick={() => setActiveTab('pretrade')}>برنامه قبل از معامله</TabButton>
         <TabButton active={activeTab === 'psychology'} onClick={() => setActiveTab('psychology')}>روانشناسی</TabButton>
         <TabButton active={activeTab === 'review'} onClick={() => setActiveTab('review')}>بازبینی</TabButton>
+        <TabButton active={activeTab === 'screenshots'} onClick={() => setActiveTab('screenshots')}>
+          اسکرین‌شات‌ها {images.length > 0 && `(${images.length})`}
+        </TabButton>
       </div>
 
       {/* Tab Content */}
@@ -618,6 +653,40 @@ export default function TradeDetailPage() {
                   placeholder="هر نکته دیگری که می‌خواهید ثبت کنید..."
                 />
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'screenshots' && user && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>اسکرین‌شات‌های معامله</CardTitle>
+            </CardHeader>
+            <div className="space-y-6">
+              {/* Upload Area */}
+              <TradeImageUpload
+                tradeId={trade.id}
+                userId={user.id}
+                onUploadComplete={handleImageUpload}
+              />
+
+              {/* Images Grid */}
+              {images.length > 0 ? (
+                <TradeImageViewer
+                  images={images}
+                  onDelete={handleImageDelete}
+                />
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <svg className="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p>هنوز اسکرین‌شاتی آپلود نشده است</p>
+                  <p className="text-sm mt-1">تصاویر نمودار معامله خود را آپلود کنید</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>

@@ -170,6 +170,32 @@ export interface TradeWithJournal extends Trade {
   mistakes?: { mistake: Mistake; notes: string | null }[];
 }
 
+// --- Trade Image ---
+export interface TradeImage {
+  id: string;
+  trade_id: string;
+  user_id: string;
+  
+  // Storage metadata
+  storage_provider: string;
+  storage_bucket: string;
+  storage_path: string;
+  
+  // File metadata
+  original_filename: string;
+  original_size_bytes: number;
+  processed_size_bytes: number;
+  mime_type: string;
+  width: number | null;
+  height: number | null;
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export type TradeImageInsert = Omit<TradeImage, 'id' | 'created_at' | 'updated_at'>;
+
 // --- Trade ---
 export interface Trade {
   id: string;
