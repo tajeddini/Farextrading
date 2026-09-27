@@ -7,6 +7,7 @@ import AppLayout from './components/layout/AppLayout';
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const GuestLoginPage = lazy(() => import('./pages/auth/GuestLoginPage'));
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const AccountsPage = lazy(() => import('./pages/accounts/AccountsPage'));
 const AccountDetailPage = lazy(() => import('./pages/accounts/AccountDetailPage'));
@@ -46,6 +47,16 @@ const router = createBrowserRouter([
       <PublicRoute>
         <SuspenseWrapper>
           <RegisterPage />
+        </SuspenseWrapper>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/guest',
+    element: (
+      <PublicRoute>
+        <SuspenseWrapper>
+          <GuestLoginPage />
         </SuspenseWrapper>
       </PublicRoute>
     ),

@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useGuest } from '../../contexts/GuestContext';
+import { useGuestData } from '../../hooks/useGuestData';
 import { Card, CardTitle } from '../../components/ui/Card';
 import { getAccountCount } from '../../services/accounts';
 import { EmptyState } from '../../components/ui/EmptyState';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
+  const { isGuest } = useGuest();
+  const { accounts, trades } = useGuestData();
   const [accountCount, setAccountCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (isGuest) {
+      setAccountCount(accounts.length);
+    } else if (user) {
       getAccountCount(user.id).then(setAccountCount).catch(() => setAccountCount(0));
     }
-  }, [user]);
+  }, [user, isGuest, accounts]);
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'کاربر';
+  const displayName = isGuest ? 'کاربر مهمان' : (profile?.display_name || user?.email?.split('@')[0] || 'کاربر');
 
   return (
     <div className="space-y-6">
@@ -38,20 +44,20 @@ export default function DashboardPage() {
         />
         <StatCard
           title="معاملات"
-          value="۰"
+          value={isGuest ? trades.length.toString() : '۰'}
           subtitle="مجموع معاملات"
           color="green"
         />
         <StatCard
           title="نرخ برد"
-          value="—"
-          subtitle="هفته جاری"
+          value={isGuest ? '60%' : '—'}
+          subtitle={isGuest ? 'نمونه' : 'هفته جاری'}
           color="purple"
         />
         <StatCard
           title="سود/زیان خالص"
-          value="۰$"
-          subtitle="ماه جاری"
+          value={isGuest ? '+$457' : '۰$'}
+          subtitle={isGuest ? 'نمونه' : 'ماه جاری'}
           color="orange"
         />
       </div>

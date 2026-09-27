@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useGuest } from '../contexts/GuestContext';
 import { LoadingPage } from './ui/Loading';
 
 interface ProtectedRouteProps {
@@ -8,13 +9,15 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const { isGuest } = useGuest();
   const location = useLocation();
 
   if (loading) {
     return <LoadingPage />;
   }
 
-  if (!user) {
+  // Allow access if authenticated OR in guest mode
+  if (!user && !isGuest) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

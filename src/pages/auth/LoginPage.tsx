@@ -99,6 +99,16 @@ export default function LoginPage() {
             ثبت‌نام کنید
           </Link>
         </p>
+
+        <p className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
+          یا{' '}
+          <Link
+            to="/guest"
+            className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500"
+          >
+            به عنوان مهمان وارد شوید
+          </Link>
+        </p>
       </div>
     </div>
   );
