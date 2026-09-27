@@ -2,11 +2,11 @@
 
 ## وضعیت فعلی
 
-پروژه در فاز **What-If Analysis + Custom Dashboard** تکمیل شده.
+پروژه در فاز **Security, Performance & Production Hardening** تکمیل شده.
 - ✅ Supabase integration
 - ✅ Authentication
 - ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches, strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes, trade_images, trading_reviews, dashboard_layouts)
-- ✅ RLS policies (تمام جداول)
+- ✅ RLS policies (تمام جداول - 15 جدول)
 - ✅ Accounts & Phases management
 - ✅ MT4/MT5 CSV Import
 - ✅ Trading Journal (Pre-Trade Plan, Psychology, Rule Adherence, Post-Trade Review)
@@ -15,17 +15,21 @@
 - ✅ Mistake tracking (many-to-many)
 - ✅ Emotion tracking (before/during/after)
 - ✅ Persian Voice-to-Text (Web Speech API)
-- ✅ Trade List with pagination, filters
+- ✅ Trade List with pagination, filters, responsive card view
 - ✅ Trade Detail with journal tabs
 - ✅ Trade Screenshot Storage (Supabase Storage)
 - ✅ Image optimization (WebP conversion, resize)
 - ✅ Core Analytics (KPIs, Equity Curve, Drawdown, P/L Charts, Performance Breakdown)
 - ✅ Advanced Analytics (Hour/Day analysis, Calendar, Psychology analytics)
 - ✅ Trading Reviews (Daily/Weekly/Monthly)
-- ✅ **What-If Analysis (Scenario simulation, Exclusion filters, Comparison)**
-- ✅ **Custom Dashboard (Widget system, Persistence, Reorder)**
+- ✅ What-If Analysis (Scenario simulation, Exclusion filters, Comparison)
+- ✅ Custom Dashboard (Widget system, Persistence, Reorder)
+- ✅ Guest Mode with sample data
+- ✅ **Security Audit & Hardening (RLS, Storage, Upload, Import)**
+- ✅ **Performance Optimization (Code splitting, Lazy loading, Image optimization)**
+- ✅ **Responsive UX (Mobile card view, Tablet, Desktop)**
+- ✅ **Production Readiness (Security headers, Environment variables)**
 - ✅ Toast notification system
-- ❌ Security & Performance Optimization (فاز بعدی)
 
 ## تکنولوژی‌ها
 
