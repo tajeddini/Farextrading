@@ -14,6 +14,7 @@ const PlaceholderPage = lazy(() => import('./pages/PlaceholderPage'));
 const ImportPage = lazy(() => import('./pages/import/ImportPage'));
 const TradesPage = lazy(() => import('./pages/trades/TradesPage'));
 const TradeDetailPage = lazy(() => import('./pages/trades/TradeDetailPage'));
+const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -113,7 +114,7 @@ const router = createBrowserRouter([
         path: 'analytics',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="آنالیتیکس" description="تحلیل‌های پیشرفته عملکرد معاملاتی به زودی پیاده‌سازی می‌شود." />
+            <AnalyticsPage />
           </SuspenseWrapper>
         ),
       },

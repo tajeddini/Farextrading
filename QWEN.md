@@ -2,25 +2,26 @@
 
 ## وضعیت فعلی
 
-پروژه در فاز **Trade Screenshot Storage** تکمیل شده.
+پروژه در فاز **Core Analytics** تکمیل شده.
 - ✅ Supabase integration
 - ✅ Authentication
 - ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches, strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes, trade_images)
 - ✅ RLS policies (تمام جداول)
 - ✅ Accounts & Phases management
 - ✅ MT4/MT5 CSV Import
-- ✅ **Trading Journal (Pre-Trade Plan, Psychology, Rule Adherence, Post-Trade Review)**
-- ✅ **Strategy/Setup system**
-- ✅ **Tag system (many-to-many)**
-- ✅ **Mistake tracking (many-to-many)**
-- ✅ **Emotion tracking (before/during/after)**
-- ✅ **Persian Voice-to-Text (Web Speech API)**
+- ✅ Trading Journal (Pre-Trade Plan, Psychology, Rule Adherence, Post-Trade Review)
+- ✅ Strategy/Setup system
+- ✅ Tag system (many-to-many)
+- ✅ Mistake tracking (many-to-many)
+- ✅ Emotion tracking (before/during/after)
+- ✅ Persian Voice-to-Text (Web Speech API)
 - ✅ Trade List with pagination, filters
 - ✅ Trade Detail with journal tabs
-- ✅ **Trade Screenshot Storage (Supabase Storage)**
-- ✅ **Image optimization (WebP conversion, resize)**
+- ✅ Trade Screenshot Storage (Supabase Storage)
+- ✅ Image optimization (WebP conversion, resize)
+- ✅ **Core Analytics (KPIs, Equity Curve, Drawdown, P/L Charts, Performance Breakdown)**
 - ✅ Toast notification system
-- ❌ Analytics (فاز بعدی)
+- ❌ Advanced Analytics (فاز بعدی)
 
 ## تکنولوژی‌ها
 
