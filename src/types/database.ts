@@ -454,3 +454,25 @@ export const REVIEW_TYPES: { value: ReviewType; label: string }[] = [
   { value: 'weekly', label: 'هفتگی' },
   { value: 'monthly', label: 'ماهانه' },
 ];
+
+// --- Dashboard Layout Types ---
+export interface DashboardWidget {
+  id: string;
+  type: string;
+  title: string;
+  size: 'small' | 'medium' | 'large';
+  config?: Record<string, any>;
+}
+
+export interface DashboardLayout {
+  id: string;
+  user_id: string;
+  name: string;
+  is_default: boolean;
+  layout_config: DashboardWidget[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type DashboardLayoutInsert = Omit<DashboardLayout, 'id' | 'created_at' | 'updated_at'>;
+export type DashboardLayoutUpdate = Partial<Omit<DashboardLayout, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;

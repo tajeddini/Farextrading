@@ -2,10 +2,10 @@
 
 ## وضعیت فعلی
 
-پروژه در فاز **Advanced Analytics & Reviews** تکمیل شده.
+پروژه در فاز **What-If Analysis + Custom Dashboard** تکمیل شده.
 - ✅ Supabase integration
 - ✅ Authentication
-- ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches, strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes, trade_images, trading_reviews)
+- ✅ Database schema (profiles, trading_accounts, account_phases, trades, import_batches, strategies, setups, tags, mistakes, trade_journals, trade_tags, trade_mistakes, trade_images, trading_reviews, dashboard_layouts)
 - ✅ RLS policies (تمام جداول)
 - ✅ Accounts & Phases management
 - ✅ MT4/MT5 CSV Import
@@ -20,10 +20,12 @@
 - ✅ Trade Screenshot Storage (Supabase Storage)
 - ✅ Image optimization (WebP conversion, resize)
 - ✅ Core Analytics (KPIs, Equity Curve, Drawdown, P/L Charts, Performance Breakdown)
-- ✅ **Advanced Analytics (Hour/Day analysis, Calendar, Psychology analytics)**
-- ✅ **Trading Reviews (Daily/Weekly/Monthly)**
+- ✅ Advanced Analytics (Hour/Day analysis, Calendar, Psychology analytics)
+- ✅ Trading Reviews (Daily/Weekly/Monthly)
+- ✅ **What-If Analysis (Scenario simulation, Exclusion filters, Comparison)**
+- ✅ **Custom Dashboard (Widget system, Persistence, Reorder)**
 - ✅ Toast notification system
-- ❌ What-If Analysis (فاز بعدی)
+- ❌ Security & Performance Optimization (فاز بعدی)
 
 ## تکنولوژی‌ها
 

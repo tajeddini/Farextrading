@@ -15,8 +15,10 @@ const ImportPage = lazy(() => import('./pages/import/ImportPage'));
 const TradesPage = lazy(() => import('./pages/trades/TradesPage'));
 const TradeDetailPage = lazy(() => import('./pages/trades/TradeDetailPage'));
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
+const WhatIfPage = lazy(() => import('./pages/analytics/WhatIfPage'));
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
 const ReviewsPage = lazy(() => import('./pages/reviews/ReviewsPage'));
+const CustomDashboardPage = lazy(() => import('./pages/dashboard/CustomDashboardPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -68,7 +70,7 @@ const router = createBrowserRouter([
         path: 'dashboard',
         element: (
           <SuspenseWrapper>
-            <DashboardPage />
+            <CustomDashboardPage />
           </SuspenseWrapper>
         ),
       },
@@ -117,6 +119,14 @@ const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <AnalyticsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'analytics/what-if',
+        element: (
+          <SuspenseWrapper>
+            <WhatIfPage />
           </SuspenseWrapper>
         ),
       },
