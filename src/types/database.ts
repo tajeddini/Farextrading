@@ -408,3 +408,49 @@ export const DEFAULT_CHECKLIST = [
   { key: 'entry_confirmed', label: 'شرط ورود تأیید شده؟' },
   { key: 'emotional_state_ok', label: 'وضعیت روحی مناسب؟' },
 ];
+
+// --- Review Types ---
+export type ReviewType = 'daily' | 'weekly' | 'monthly';
+
+export interface TradingReview {
+  id: string;
+  user_id: string;
+  review_type: ReviewType;
+  review_date: string;
+  period_start: string;
+  period_end: string;
+  account_id: string | null;
+  phase_id: string | null;
+  
+  // Auto-calculated statistics
+  total_trades: number;
+  net_pnl: number;
+  win_rate: number | null;
+  profit_factor: number | null;
+  expectancy: number | null;
+  max_drawdown: number | null;
+  avg_duration: number | null;
+  
+  // Review content
+  summary: string | null;
+  what_went_well: string | null;
+  what_went_wrong: string | null;
+  main_lesson: string | null;
+  main_mistake: string | null;
+  psychology_notes: string | null;
+  rule_adherence_notes: string | null;
+  improvement_plan: string | null;
+  next_period_plan: string | null;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+export type TradingReviewInsert = Omit<TradingReview, 'id' | 'created_at' | 'updated_at'>;
+export type TradingReviewUpdate = Partial<Omit<TradingReview, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export const REVIEW_TYPES: { value: ReviewType; label: string }[] = [
+  { value: 'daily', label: 'روزانه' },
+  { value: 'weekly', label: 'هفتگی' },
+  { value: 'monthly', label: 'ماهانه' },
+];

@@ -15,6 +15,8 @@ const ImportPage = lazy(() => import('./pages/import/ImportPage'));
 const TradesPage = lazy(() => import('./pages/trades/TradesPage'));
 const TradeDetailPage = lazy(() => import('./pages/trades/TradeDetailPage'));
 const AnalyticsPage = lazy(() => import('./pages/analytics/AnalyticsPage'));
+const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
+const ReviewsPage = lazy(() => import('./pages/reviews/ReviewsPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -122,7 +124,7 @@ const router = createBrowserRouter([
         path: 'calendar',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="تقویم معاملاتی" description="نمای تقویمی معاملات به زودی پیاده‌سازی می‌شود." />
+            <CalendarPage />
           </SuspenseWrapper>
         ),
       },
@@ -130,7 +132,7 @@ const router = createBrowserRouter([
         path: 'reviews',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="بازبینی‌ها" description="بازبینی روزانه، هفتگی و ماهانه به زودی پیاده‌سازی می‌شود." />
+            <ReviewsPage />
           </SuspenseWrapper>
         ),
       },

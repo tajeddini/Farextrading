@@ -128,3 +128,114 @@ export interface AnalyticsResult {
   duration: DurationMetrics;
   currency: string;
 }
+
+// --- Advanced Analytics Types ---
+
+// Hour of Day Performance
+export interface HourPerformance {
+  hour: number; // 0-23
+  label: string; // "00:00-00:59"
+  trades: number;
+  wins: number;
+  losses: number;
+  breakeven: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+  averageDuration: number | null;
+}
+
+// Day of Week Performance
+export interface DayPerformance {
+  day: number; // 0-6 (Saturday=0, Friday=6 for Persian calendar)
+  label: string; // "شنبه", "یکشنبه", etc.
+  trades: number;
+  wins: number;
+  losses: number;
+  breakeven: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+  averageDuration: number | null;
+}
+
+// Calendar Day Data
+export interface CalendarDay {
+  date: string; // YYYY-MM-DD
+  trades: number;
+  wins: number;
+  losses: number;
+  breakeven: number;
+  netPnl: number;
+  winRate: number | null;
+  totalDuration: number;
+  averageDuration: number | null;
+}
+
+// Duration Buckets
+export interface DurationBucket {
+  label: string;
+  minSeconds: number;
+  maxSeconds: number | null; // null for unlimited
+  trades: number;
+  wins: number;
+  losses: number;
+  netPnl: number;
+  winRate: number | null;
+}
+
+// Psychology Analytics
+export interface EmotionPerformance {
+  emotion: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+}
+
+export interface ConfidencePerformance {
+  score: number; // 1-10
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+}
+
+export interface ExecutionQualityPerformance {
+  score: number; // 1-10
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+}
+
+export interface RuleAdherencePerformance {
+  adherence: string; // 'followed' | 'partially_followed' | 'violated' | 'not_set'
+  label: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  netPnl: number;
+  averagePnl: number | null;
+}
+
+// Extended Analytics Result
+export interface ExtendedAnalyticsResult extends AnalyticsResult {
+  hourPerformance: HourPerformance[];
+  dayPerformance: DayPerformance[];
+  calendarData: CalendarDay[];
+  durationBuckets: DurationBucket[];
+  emotionBeforePerformance: EmotionPerformance[];
+  emotionDuringPerformance: EmotionPerformance[];
+  emotionAfterPerformance: EmotionPerformance[];
+  confidencePerformance: ConfidencePerformance[];
+  executionQualityPerformance: ExecutionQualityPerformance[];
+  ruleAdherencePerformance: RuleAdherencePerformance[];
+}
