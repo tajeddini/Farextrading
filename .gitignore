@@ -1,0 +1,21 @@
+node_modules/
+.next/
+dist/
+build/
+*.log
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
