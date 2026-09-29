@@ -146,15 +146,37 @@ console.log(response.data); // Mock response
 
 ### Configuring a Real Provider (Future)
 
-```typescript
-import { configureAIProvider } from './services/ai/provider-registry';
+**IMPORTANT:** Real AI providers require a **server-side API boundary**. Never expose API keys in the browser.
 
-configureAIProvider({
-  type: 'openai',
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  model: 'gpt-4',
-});
+The intended architecture for production:
+
 ```
+Browser (React)
+    ↓
+Vercel Serverless Function (API Route)
+    ↓
+AI Provider (OpenAI/Qwen/etc.)
+    ↓
+Validated Query Plan
+    ↓
+Existing Analytics Services
+    ↓
+Sanitized Context
+    ↓
+AI Response
+    ↓
+Browser
+```
+
+**DO NOT** use `VITE_OPENAI_API_KEY` or any browser-side API keys.
+
+For development/testing, use the Mock Provider (no API key required).
+
+For production, implement a serverless function that:
+1. Receives the request from the browser
+2. Validates the user's authentication
+3. Calls the AI provider with the server-side API key
+4. Returns the response to the browser
 
 ### Validating a Query Plan
 

@@ -20,6 +20,10 @@ const WhatIfPage = lazy(() => import('./pages/analytics/WhatIfPage'));
 const CalendarPage = lazy(() => import('./pages/calendar/CalendarPage'));
 const ReviewsPage = lazy(() => import('./pages/reviews/ReviewsPage'));
 const CustomDashboardPage = lazy(() => import('./pages/dashboard/CustomDashboardPage'));
+const StrategiesPage = lazy(() => import('./pages/settings/StrategiesPage'));
+const SetupsPage = lazy(() => import('./pages/settings/SetupsPage'));
+const TagsPage = lazy(() => import('./pages/settings/TagsPage'));
+const MistakesPage = lazy(() => import('./pages/settings/MistakesPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -170,6 +174,38 @@ const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <PlaceholderPage title="تنظیمات" description="تنظیمات حساب کاربری به زودی پیاده‌سازی می‌شود." />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'settings/strategies',
+        element: (
+          <SuspenseWrapper>
+            <StrategiesPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'settings/setups',
+        element: (
+          <SuspenseWrapper>
+            <SetupsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'settings/tags',
+        element: (
+          <SuspenseWrapper>
+            <TagsPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'settings/mistakes',
+        element: (
+          <SuspenseWrapper>
+            <MistakesPage />
           </SuspenseWrapper>
         ),
       },
