@@ -127,6 +127,7 @@ export default function ImportPage() {
     const normalizedTrades: NormalizedTrade[] = [];
     const invalidRows: { row: number; field: string; message: string }[] = [];
 
+    // Step 1: Normalize all rows
     for (let i = 0; i < state.rows.length; i++) {
       const { trade, errors } = normalizeTradeRow(state.rows[i], state.columnMapping, i + 1);
       if (trade) {
@@ -136,13 +137,72 @@ export default function ImportPage() {
       }
     }
 
+    // Step 2: If MT5 source, apply aggregation
+    let finalTrades = normalizedTrades;
+    if (state.source === 'mt5' && normalizedTrades.length > 0) {
+      try {
+        // Import MT5 aggregation dynamically to avoid circular dependencies
+        import('../../utils/mt5-aggregation').then(({ aggregateMT5Deals }) => {
+          // Convert NormalizedTrade to MT5Deal format
+          const mt5Deals = normalizedTrades.map(t => ({
+            ticket: t.ticket || undefined,
+            position_id: t.position_id || undefined,
+            symbol: t.symbol,
+            side: t.side,
+            volume: t.volume,
+            price: t.entry_price,
+            datetime: t.entry_datetime,
+            commission: t.commission || 0,
+            swap: t.swap || 0,
+            profit: t.profit || 0,
+            type: 'deal' as const,
+            comment: t.comment || undefined,
+            magic_number: t.magic_number || undefined,
+          }));
+
+          const aggregated = aggregateMT5Deals(mt5Deals);
+          
+          // Convert back to NormalizedTrade format
+          finalTrades = aggregated.map((pos: any) => ({
+            ticket: pos.ticket,
+            position_id: pos.position_id,
+            symbol: pos.symbol,
+            side: pos.side,
+            volume: pos.total_volume,
+            entry_datetime: pos.entry_datetime,
+            entry_price: pos.weighted_entry_price,
+            stop_loss: null,
+            take_profit: null,
+            exit_datetime: pos.exit_datetime,
+            exit_price: pos.weighted_exit_price,
+            commission: pos.total_commission,
+            swap: pos.total_swap,
+            profit: pos.total_profit,
+            comment: pos.deals?.[0]?.comment || null,
+            magic_number: pos.deals?.[0]?.magic_number || null,
+          }));
+
+          setState(prev => ({
+            ...prev,
+            step: 'preview',
+            normalizedTrades: finalTrades,
+            invalidRows,
+          }));
+        });
+        return; // Early return, setState will be called in .then()
+      } catch (err) {
+        console.error('MT5 aggregation failed, using raw trades:', err);
+        // Fall back to raw trades if aggregation fails
+      }
+    }
+
     setState(prev => ({
       ...prev,
       step: 'preview',
-      normalizedTrades,
+      normalizedTrades: finalTrades,
       invalidRows,
     }));
-  }, [state.rows, state.columnMapping]);
+  }, [state.rows, state.columnMapping, state.source]);
 
   // Check duplicates
   const checkForDuplicates = useCallback(async () => {

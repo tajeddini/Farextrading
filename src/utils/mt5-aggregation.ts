@@ -200,3 +200,10 @@ export function processMT5Deals(deals: MT5Deal[]): NormalizedTrade[] {
   const positions = aggregateMT5Positions(deals);
   return positions.map(positionToNormalizedTrade);
 }
+
+/**
+ * Alias for processMT5Deals - used in import pipeline
+ */
+export function aggregateMT5Deals(deals: MT5Deal[]): AggregatedPosition[] {
+  return aggregateMT5Positions(deals);
+}

@@ -69,6 +69,38 @@ export async function getTradesWithJournal(
   page: number = 1,
   limit: number = 50
 ): Promise<TradeWithJournal[]> {
+  // Step 1: Get all trade IDs that match journal-based filters
+  let tradeIdsQuery = supabase
+    .from('trade_journals')
+    .select('trade_id')
+    .eq('user_id', userId);
+
+  // Apply journal-based filters at database level
+  if (filters.journalStatus) {
+    tradeIdsQuery = tradeIdsQuery.eq('status', filters.journalStatus);
+  }
+
+  if (filters.strategyId) {
+    if (filters.strategyId === 'no_strategy') {
+      tradeIdsQuery = tradeIdsQuery.is('strategy_id', null);
+    } else {
+      tradeIdsQuery = tradeIdsQuery.eq('strategy_id', filters.strategyId);
+    }
+  }
+
+  const { data: tradeIdsResult, error: tradeIdsError } = await tradeIdsQuery;
+
+  if (tradeIdsError) {
+    console.error('Error filtering by journal:', tradeIdsError);
+    throw new Error('خطا در فیلتر کردن ژورنال');
+  }
+
+  // If journal filters are applied and no trades match, return empty
+  if ((filters.journalStatus || filters.strategyId) && (!tradeIdsResult || tradeIdsResult.length === 0)) {
+    return [];
+  }
+
+  // Step 2: Query trades with all filters
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
@@ -84,13 +116,19 @@ export async function getTradesWithJournal(
     .order('entry_datetime', { ascending: false })
     .range(from, to);
 
-  // Apply filters
+  // Apply trade-based filters
   if (filters.accountId) {
     query = query.eq('account_id', filters.accountId);
   }
 
   if (filters.search) {
     query = query.or(`symbol.ilike.%${filters.search}%,ticket.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`);
+  }
+
+  // Apply journal-based filter using trade IDs
+  if ((filters.journalStatus || filters.strategyId) && tradeIdsResult) {
+    const matchingTradeIds = tradeIdsResult.map(t => t.trade_id);
+    query = query.in('id', matchingTradeIds);
   }
 
   const { data, error } = await query;
@@ -100,7 +138,8 @@ export async function getTradesWithJournal(
     throw new Error('خطا در دریافت معاملات');
   }
 
-  let trades = (data || []).map((trade: any) => ({
+  // Step 3: Transform data
+  const trades = (data || []).map((trade: any) => ({
     ...trade,
     journal: trade.journal?.[0] || null,
     tags: (trade.tags || []).map((t: any) => t.tag),
@@ -109,23 +148,6 @@ export async function getTradesWithJournal(
       notes: m.notes,
     })),
   }));
-
-  // Apply client-side filters that require journal data
-  if (filters.journalStatus) {
-    trades = trades.filter((t: any) => {
-      const status = t.journal?.status || 'not_started';
-      return status === filters.journalStatus;
-    });
-  }
-
-  if (filters.strategyId) {
-    trades = trades.filter((t: any) => {
-      if (filters.strategyId === 'no_strategy') {
-        return !t.journal?.strategy_id;
-      }
-      return t.journal?.strategy_id === filters.strategyId;
-    });
-  }
 
   return trades;
 }
@@ -158,6 +180,37 @@ export async function getTradeWithJournal(tradeId: string, userId: string): Prom
 }
 
 export async function getTradeCount(userId: string, filters: JournalFilters = {}): Promise<number> {
+  // Step 1: Get trade IDs that match journal-based filters (same as getTradesWithJournal)
+  let tradeIdsQuery = supabase
+    .from('trade_journals')
+    .select('trade_id')
+    .eq('user_id', userId);
+
+  if (filters.journalStatus) {
+    tradeIdsQuery = tradeIdsQuery.eq('status', filters.journalStatus);
+  }
+
+  if (filters.strategyId) {
+    if (filters.strategyId === 'no_strategy') {
+      tradeIdsQuery = tradeIdsQuery.is('strategy_id', null);
+    } else {
+      tradeIdsQuery = tradeIdsQuery.eq('strategy_id', filters.strategyId);
+    }
+  }
+
+  const { data: tradeIdsResult, error: tradeIdsError } = await tradeIdsQuery;
+
+  if (tradeIdsError) {
+    console.error('Error filtering by journal for count:', tradeIdsError);
+    throw new Error('خطا در شمارش معاملات');
+  }
+
+  // If journal filters are applied and no trades match, return 0
+  if ((filters.journalStatus || filters.strategyId) && (!tradeIdsResult || tradeIdsResult.length === 0)) {
+    return 0;
+  }
+
+  // Step 2: Count trades with all filters
   let query = supabase
     .from('trades')
     .select('*', { count: 'exact', head: true })
@@ -169,6 +222,12 @@ export async function getTradeCount(userId: string, filters: JournalFilters = {}
 
   if (filters.search) {
     query = query.or(`symbol.ilike.%${filters.search}%,ticket.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`);
+  }
+
+  // Apply journal-based filter using trade IDs
+  if ((filters.journalStatus || filters.strategyId) && tradeIdsResult) {
+    const matchingTradeIds = tradeIdsResult.map((t: any) => t.trade_id);
+    query = query.in('id', matchingTradeIds);
   }
 
   const { count, error } = await query;

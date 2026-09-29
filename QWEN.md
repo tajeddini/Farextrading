@@ -2,7 +2,13 @@
 
 ## وضعیت نهایی
 
-پروژه در فاز **12.7 — Final Completion & Hardening** تکمیل شده و آماده Phase 13 است.
+پروژه در فاز **12.8 — Final Blockers Closure** تکمیل شده و آماده Phase 13 است.
+
+### فاز 12.8 — Final Blockers Closure (تکمیل شده)
+- ✅ اصلاح Journal server-side filtering + pagination consistency
+- ✅ اتصال MT5 aggregation به import pipeline واقعی
+- ✅ Build موفقیت‌آمیز بدون خطا
+- ✅ QWEN.md synchronized با repository واقعی
 
 ### فاز 12.7 — Final Hardening (تکمیل شده)
 - ✅ رفع Screenshot Delete/Replace Safety
