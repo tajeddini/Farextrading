@@ -24,6 +24,8 @@ const StrategiesPage = lazy(() => import('./pages/settings/StrategiesPage'));
 const SetupsPage = lazy(() => import('./pages/settings/SetupsPage'));
 const TagsPage = lazy(() => import('./pages/settings/TagsPage'));
 const MistakesPage = lazy(() => import('./pages/settings/MistakesPage'));
+const JournalPage = lazy(() => import('./pages/journal/JournalPage'));
+const SettingsPage = lazy(() => import('./pages/settings/SettingsPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -125,7 +127,7 @@ const router = createBrowserRouter([
         path: 'journal',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="ژورنال معاملاتی" description="ثبت و مدیریت ژورنال معاملات به زودی پیاده‌سازی می‌شود." />
+            <JournalPage />
           </SuspenseWrapper>
         ),
       },
@@ -173,7 +175,7 @@ const router = createBrowserRouter([
         path: 'settings',
         element: (
           <SuspenseWrapper>
-            <PlaceholderPage title="تنظیمات" description="تنظیمات حساب کاربری به زودی پیاده‌سازی می‌شود." />
+            <SettingsPage />
           </SuspenseWrapper>
         ),
       },

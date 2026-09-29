@@ -35,6 +35,7 @@ export default function CustomDashboardPage() {
   const [layout, setLayout] = useState<DashboardLayout | null>(null);
   const [widgets, setWidgets] = useState<DashboardWidget[]>(DEFAULT_DASHBOARD_WIDGETS);
   const [trades, setTrades] = useState<ClassifiedTrade[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [accountCount, setAccountCount] = useState(0);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
@@ -55,11 +56,13 @@ export default function CustomDashboardPage() {
           setWidgets(savedLayout.layout_config || DEFAULT_DASHBOARD_WIDGETS);
         }
 
-        // Load counts
-        const [accCount, tradeCount] = await Promise.all([
+        // Load accounts and counts
+        const [accountsData, accCount, tradeCount] = await Promise.all([
+          fetchAccounts(user.id),
           getAccountCount(user.id),
           getTradeCount(user.id),
         ]);
+        setAccounts(accountsData);
         setAccountCount(accCount);
 
         // Load trades for analytics
@@ -75,9 +78,16 @@ export default function CustomDashboardPage() {
     loadData();
   }, [user, selectedAccountId]);
 
+  // Get starting balance from selected account
+  const startingBalance = useMemo(() => {
+    if (!selectedAccountId || !accounts.length) return 0;
+    const account = accounts.find(a => a.id === selectedAccountId);
+    return account?.initial_balance || 0;
+  }, [selectedAccountId, accounts]);
+
   // Calculate metrics
   const metrics = useMemo(() => calculateCoreMetrics(trades), [trades]);
-  const equity = useMemo(() => calculateEquityCurve(trades, 10000), [trades]);
+  const equity = useMemo(() => calculateEquityCurve(trades, startingBalance), [trades, startingBalance]);
   const drawdown = useMemo(() => calculateDrawdown(equity), [equity]);
   const dailyPnl = useMemo(() => aggregateByTime(trades, 'daily'), [trades]);
   const symbolPerformance = useMemo(() => calculatePerformanceBreakdown(trades, t => t.symbol), [trades]);
