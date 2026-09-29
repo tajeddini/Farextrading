@@ -26,6 +26,23 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function CustomDashboardPage() {
   const { user } = useAuth();
@@ -171,22 +188,21 @@ export default function CustomDashboardPage() {
           action={<Button onClick={() => setIsAddWidgetModalOpen(true)}>افزودن ویجت</Button>}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {widgets.map(widget => (
-            <WidgetRenderer
-              key={widget.id}
-              widget={widget}
-              onRemove={() => removeWidget(widget.id)}
-              metrics={metrics}
-              equity={equity}
-              dailyPnl={dailyPnl}
-              symbolPerformance={symbolPerformance}
-              drawdown={drawdown}
-              trades={trades}
-              accountCount={accountCount}
-            />
-          ))}
-        </div>
+        <SortableWidgets
+          widgets={widgets}
+          onReorder={(newWidgets) => {
+            setWidgets(newWidgets);
+            saveLayout(newWidgets);
+          }}
+          onRemove={removeWidget}
+          metrics={metrics}
+          equity={equity}
+          dailyPnl={dailyPnl}
+          symbolPerformance={symbolPerformance}
+          drawdown={drawdown}
+          trades={trades}
+          accountCount={accountCount}
+        />
       )}
 
       {/* Add Widget Modal */}
@@ -231,6 +247,140 @@ export default function CustomDashboardPage() {
         variant="warning"
       />
     </div>
+  );
+}
+
+// --- Sortable Widget Component ---
+
+function SortableWidget({ widget, onRemove, metrics, equity, dailyPnl, symbolPerformance, drawdown, trades, accountCount }: {
+  widget: DashboardWidget;
+  onRemove: () => void;
+  metrics: any;
+  equity: any;
+  dailyPnl: any;
+  symbolPerformance: any;
+  drawdown: any;
+  trades: ClassifiedTrade[];
+  accountCount: number;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <Card>
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 right-2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity z-10 p-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+          title="جابجایی ویجت"
+        >
+          <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+
+        {/* Remove Button */}
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <button
+            onClick={onRemove}
+            className="p-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50"
+            title="حذف ویجت"
+          >
+            ×
+          </button>
+        </div>
+
+        <CardHeader>
+          <CardTitle>{widget.title}</CardTitle>
+        </CardHeader>
+
+        {widget.type === 'kpi' && <KpiWidget metric={widget.config?.metric} metrics={metrics} accountCount={accountCount} />}
+        {widget.type === 'chart' && <ChartWidget chartType={widget.config?.chartType} equity={equity} dailyPnl={dailyPnl} />}
+        {widget.type === 'table' && <TableWidget tableType={widget.config?.tableType} symbolPerformance={symbolPerformance} />}
+      </Card>
+    </div>
+  );
+}
+
+// --- Sortable Widgets Container ---
+
+function SortableWidgets({ widgets, onReorder, onRemove, metrics, equity, dailyPnl, symbolPerformance, drawdown, trades, accountCount }: {
+  widgets: DashboardWidget[];
+  onReorder: (newWidgets: DashboardWidget[]) => void;
+  onRemove: (widgetId: string) => void;
+  metrics: any;
+  equity: any;
+  dailyPnl: any;
+  symbolPerformance: any;
+  drawdown: any;
+  trades: ClassifiedTrade[];
+  accountCount: number;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = widgets.findIndex(w => w.id === active.id);
+      const newIndex = widgets.findIndex(w => w.id === over.id);
+      const newWidgets = arrayMove(widgets, oldIndex, newIndex);
+      onReorder(newWidgets);
+    }
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={widgets.map(w => w.id)}
+        strategy={rectSortingStrategy}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {widgets.map(widget => (
+            <SortableWidget
+              key={widget.id}
+              widget={widget}
+              onRemove={() => onRemove(widget.id)}
+              metrics={metrics}
+              equity={equity}
+              dailyPnl={dailyPnl}
+              symbolPerformance={symbolPerformance}
+              drawdown={drawdown}
+              trades={trades}
+              accountCount={accountCount}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
 
