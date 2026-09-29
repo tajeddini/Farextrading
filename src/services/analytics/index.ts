@@ -117,15 +117,37 @@ export async function calculateAnalytics(
   const weeklyPnl = aggregateByTime(classifiedTrades, 'weekly');
   const monthlyPnl = aggregateByTime(classifiedTrades, 'monthly');
   
+  // Fetch journal data for strategy analysis
+  const tradeIds = classifiedTrades.map(t => t.id);
+  let tradesWithJournal = classifiedTrades;
+  
+  if (tradeIds.length > 0) {
+    const { data: journals } = await supabase
+      .from('trade_journals')
+      .select('trade_id, strategy_id')
+      .in('trade_id', tradeIds);
+    
+    if (journals && journals.length > 0) {
+      const journalMap = new Map(journals.map(j => [j.trade_id, j]));
+      tradesWithJournal = classifiedTrades.map(t => ({
+        ...t,
+        journal: journalMap.get(t.id) || null,
+      }));
+    }
+  }
+  
   // Performance breakdowns
   const symbolPerformance = calculatePerformanceBreakdown(
     classifiedTrades,
     t => t.symbol
   );
   
-  // Note: Strategy performance requires journal data which needs a separate query
-  // For now, we skip strategy breakdown until journal data is fetched
-  const strategyPerformance: PerformanceBreakdown[] = [];
+  // Strategy performance - now with actual journal data
+  const strategyPerformance = calculatePerformanceBreakdown(
+    tradesWithJournal,
+    t => (t as any).journal?.strategy_id || 'no_strategy',
+    key => key === 'no_strategy' ? 'بدون استراتژی' : key
+  );
   
   const sidePerformance = calculatePerformanceBreakdown(
     classifiedTrades,
