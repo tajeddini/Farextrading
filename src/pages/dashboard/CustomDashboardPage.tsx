@@ -78,11 +78,19 @@ export default function CustomDashboardPage() {
     loadData();
   }, [user, selectedAccountId]);
 
-  // Get starting balance from selected account
+  // Get starting balance from selected account or all accounts
   const startingBalance = useMemo(() => {
-    if (!selectedAccountId || !accounts.length) return 0;
-    const account = accounts.find(a => a.id === selectedAccountId);
-    return account?.initial_balance || 0;
+    if (selectedAccountId) {
+      // Selected account: use its initial balance
+      const account = accounts.find(a => a.id === selectedAccountId);
+      return account?.initial_balance || 0;
+    } else if (accounts.length > 0) {
+      // All accounts: sum initial balances
+      // Note: This assumes all accounts use the same currency
+      // In a multi-currency scenario, this would need conversion
+      return accounts.reduce((sum, acc) => sum + (acc.initial_balance || 0), 0);
+    }
+    return 0;
   }, [selectedAccountId, accounts]);
 
   // Calculate metrics
@@ -147,6 +155,10 @@ export default function CustomDashboardPage() {
           onChange={(e) => setSelectedAccountId(e.target.value || null)}
           options={[
             { value: '', label: 'همه حساب‌ها' },
+            ...accounts.map(account => ({
+              value: account.id,
+              label: account.name,
+            })),
           ]}
         />
       </Card>

@@ -166,6 +166,42 @@ export async function calculateAnalytics(
     }
   );
   
+  // Fetch setup names for setup analytics
+  let setupMap = new Map<string, string>();
+  const setupIds = [...new Set(
+    (tradesWithJournal as any[])
+      .map(t => t.journal?.setup_id)
+      .filter(Boolean)
+  )];
+  
+  if (setupIds.length > 0) {
+    try {
+      const { data: setups, error: setupsError } = await supabase
+        .from('setups')
+        .select('id, name')
+        .in('id', setupIds as string[]);
+      
+      if (setupsError) {
+        console.error('Error fetching setups:', setupsError);
+      } else if (setups) {
+        setupMap = new Map(setups.map((s: any) => [s.id, s.name]));
+      }
+    } catch (err) {
+      console.error('Error in setup analytics:', err);
+      // Continue without setup names
+    }
+  }
+  
+  // Setup performance - with actual journal data and setup names
+  const setupPerformance = calculatePerformanceBreakdown(
+    tradesWithJournal,
+    t => (t as any).journal?.setup_id || 'no_setup',
+    key => {
+      if (key === 'no_setup') return 'بدون ستاپ';
+      return setupMap.get(key) || 'ستاپ ناشناخته';
+    }
+  );
+  
   const sidePerformance = calculatePerformanceBreakdown(
     classifiedTrades,
     t => t.side,
@@ -210,6 +246,7 @@ export async function calculateAnalytics(
     monthlyPnl,
     symbolPerformance,
     strategyPerformance,
+    setupPerformance,
     sidePerformance,
     accountPerformance,
     phasePerformance,
