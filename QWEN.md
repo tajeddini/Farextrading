@@ -2,7 +2,14 @@
 
 ## وضعیت نهایی
 
-پروژه در فاز **12.5 — Full Completion & Correction Audit** تکمیل شده و آماده Phase 13 است.
+پروژه در فاز **12.7 — Final Completion & Hardening** تکمیل شده و آماده Phase 13 است.
+
+### فاز 12.7 — Final Hardening (تکمیل شده)
+- ✅ رفع Screenshot Delete/Replace Safety
+- ✅ رفع Tag/Mistake Relation Atomicity
+- ✅ پیاده‌سازی Dashboard Drag & Drop واقعی
+- ✅ پیاده‌سازی MT5 Position Aggregation
+- ✅ Build موفقیت‌آمیز بدون خطا
 
 ### فاز 12.5 — Full Completion Audit (تکمیل شده)
 - ✅ ایجاد صفحات مدیریت (Strategies, Setups, Tags, Mistakes)

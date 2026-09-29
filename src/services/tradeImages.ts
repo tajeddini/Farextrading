@@ -100,10 +100,16 @@ export async function getTradeImageUrl(image: TradeImage): Promise<string> {
 }
 
 /**
- * Delete a trade image
+ * Delete a trade image with safety guarantees
+ * 
+ * Safety strategy:
+ * 1. Verify ownership
+ * 2. Delete from storage
+ * 3. Only if storage deletion succeeds, delete from database
+ * 4. If storage deletion fails, preserve DB metadata and throw error
  */
 export async function deleteTradeImage(imageId: string, userId: string): Promise<void> {
-  // Get image metadata
+  // Step 1: Get image metadata and verify ownership
   const { data: image, error: fetchError } = await supabase
     .from('trade_images')
     .select('*')
@@ -115,37 +121,50 @@ export async function deleteTradeImage(imageId: string, userId: string): Promise
     throw new Error('تصویر یافت نشد یا دسترسی غیرمجاز است');
   }
 
-  // Delete from storage
+  // Step 2: Delete from storage FIRST
   const provider = getSupabaseStorageProvider();
   try {
     await provider.delete(image.storage_path);
   } catch (storageError) {
-    console.error('Failed to delete from storage:', storageError);
-    // Continue to delete DB record even if storage delete fails
-    // This prevents orphaned DB records
+    // If storage deletion fails, DO NOT delete DB metadata
+    // This prevents orphaned storage objects
+    console.error('Storage deletion failed:', storageError);
+    throw new Error('خطا در حذف فایل از ذخیره‌سازی. تصویر حذف نشد.');
   }
 
-  // Delete from database
-  const { error } = await supabase
+  // Step 3: Only after successful storage deletion, delete from database
+  const { error: dbError } = await supabase
     .from('trade_images')
     .delete()
     .eq('id', imageId)
     .eq('user_id', userId);
 
-  if (error) {
-    throw new Error('خطا در حذف تصویر');
+  if (dbError) {
+    // Storage was deleted but DB metadata remains
+    // This creates an orphaned storage object
+    // Log for manual cleanup
+    console.error('Database deletion failed after storage deletion:', dbError);
+    console.error('Orphaned storage path:', image.storage_path);
+    throw new Error('خطا در حذف اطلاعات تصویر از پایگاه داده');
   }
 }
 
 /**
- * Replace a trade image (safe replacement)
+ * Replace a trade image with safety guarantees
+ * 
+ * Safety strategy:
+ * 1. Verify ownership of existing image
+ * 2. Upload new image FIRST (never delete old until new is safe)
+ * 3. Update DB metadata to point to new image
+ * 4. Only after DB update succeeds, delete old storage object
+ * 5. If old deletion fails, log for cleanup but don't fail the operation
  */
 export async function replaceTradeImage(
   imageId: string,
   userId: string,
   newFile: File
 ): Promise<TradeImage> {
-  // Get existing image
+  // Step 1: Get existing image and verify ownership
   const { data: existingImage, error: fetchError } = await supabase
     .from('trade_images')
     .select('*')
@@ -157,20 +176,55 @@ export async function replaceTradeImage(
     throw new Error('تصویر یافت نشد یا دسترسی غیرمجاز است');
   }
 
-  // Upload new image first
+  const oldStoragePath = existingImage.storage_path;
+
+  // Step 2: Upload new image FIRST
   const newImage = await uploadTradeImage(
     existingImage.trade_id,
     userId,
     newFile
   );
 
-  // Delete old image
+  // Step 3: Update DB metadata to point to new image
+  // This is safe because we're updating, not deleting
+  const { error: updateError } = await supabase
+    .from('trade_images')
+    .update({
+      storage_path: newImage.storage_path,
+      original_filename: newImage.original_filename,
+      original_size_bytes: newImage.original_size_bytes,
+      processed_size_bytes: newImage.processed_size_bytes,
+      mime_type: newImage.mime_type,
+      width: newImage.width,
+      height: newImage.height,
+    })
+    .eq('id', imageId)
+    .eq('user_id', userId);
+
+  if (updateError) {
+    // DB update failed, but new image is uploaded
+    // Clean up the new image to avoid orphan
+    try {
+      const provider = getSupabaseStorageProvider();
+      await provider.delete(newImage.storage_path);
+    } catch (cleanupError) {
+      console.error('Failed to cleanup new image after DB update failure:', cleanupError);
+    }
+    throw new Error('خطا در بروزرسانی اطلاعات تصویر');
+  }
+
+  // Step 4: Delete old storage object
+  // If this fails, we log it but don't fail the operation
+  // The new image is already in use
   try {
-    await deleteTradeImage(imageId, userId);
+    const provider = getSupabaseStorageProvider();
+    await provider.delete(oldStoragePath);
   } catch (deleteError) {
-    console.error('Failed to delete old image after replacement:', deleteError);
-    // New image is already uploaded, so we don't rollback
-    // This prevents data loss
+    // Old storage object remains orphaned
+    // Log for manual cleanup
+    console.error('Failed to delete old storage object after replacement:', deleteError);
+    console.error('Orphaned storage path:', oldStoragePath);
+    // Don't throw - the replacement succeeded, old file is just orphaned
   }
 
   return newImage;
