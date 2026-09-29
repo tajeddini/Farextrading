@@ -34,8 +34,8 @@ export default function TradesPage() {
       setLoading(true);
       setError(null);
       const [tradesData, count] = await Promise.all([
-        getTradesWithJournal(user.id, undefined, page, limit),
-        getTradeCount(user.id),
+        getTradesWithJournal(user.id, {}, page, limit),
+        getTradeCount(user.id, {}),
       ]);
       setTrades(tradesData);
       setTotalCount(count);

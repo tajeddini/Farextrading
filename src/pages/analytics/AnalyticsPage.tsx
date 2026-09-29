@@ -330,6 +330,49 @@ export default function AnalyticsPage() {
             )}
           </Card>
 
+          {/* Setup Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>عملکرد بر اساس ستاپ</CardTitle>
+            </CardHeader>
+            {analytics.setupPerformance.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-3 py-2 text-right">ستاپ</th>
+                      <th className="px-3 py-2 text-right">معاملات</th>
+                      <th className="px-3 py-2 text-right">برد</th>
+                      <th className="px-3 py-2 text-right">باخت</th>
+                      <th className="px-3 py-2 text-right">نرخ برد</th>
+                      <th className="px-3 py-2 text-right">سود/زیان</th>
+                      <th className="px-3 py-2 text-right">میانگین</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.setupPerformance.map(item => (
+                      <tr key={item.key} className="border-b border-gray-100 dark:border-gray-700/50">
+                        <td className="px-3 py-2 font-medium">{item.label}</td>
+                        <td className="px-3 py-2">{item.trades}</td>
+                        <td className="px-3 py-2 text-green-600">{item.wins}</td>
+                        <td className="px-3 py-2 text-red-600">{item.losses}</td>
+                        <td className="px-3 py-2">{item.winRate !== null ? `${item.winRate.toFixed(1)}%` : 'N/A'}</td>
+                        <td className={`px-3 py-2 ${item.netPnl >= 0 ? 'text-green-600' : 'text-red-600'}`} dir="ltr">
+                          {formatCurrency(item.netPnl, analytics.currency)}
+                        </td>
+                        <td className={`px-3 py-2 ${item.averagePnl !== null && item.averagePnl >= 0 ? 'text-green-600' : 'text-red-600'}`} dir="ltr">
+                          {item.averagePnl !== null ? formatCurrency(item.averagePnl, analytics.currency) : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">داده‌ای برای نمایش وجود ندارد</p>
+            )}
+          </Card>
+
           {/* Buy vs Sell */}
           <Card>
             <CardHeader>

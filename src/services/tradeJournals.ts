@@ -56,9 +56,16 @@ export async function upsertTradeJournal(
   return data;
 }
 
+export interface JournalFilters {
+  accountId?: string;
+  journalStatus?: string;
+  strategyId?: string;
+  search?: string;
+}
+
 export async function getTradesWithJournal(
   userId: string,
-  accountId?: string,
+  filters: JournalFilters = {},
   page: number = 1,
   limit: number = 50
 ): Promise<TradeWithJournal[]> {
@@ -77,15 +84,23 @@ export async function getTradesWithJournal(
     .order('entry_datetime', { ascending: false })
     .range(from, to);
 
-  if (accountId) {
-    query = query.eq('account_id', accountId);
+  // Apply filters
+  if (filters.accountId) {
+    query = query.eq('account_id', filters.accountId);
+  }
+
+  if (filters.search) {
+    query = query.or(`symbol.ilike.%${filters.search}%,ticket.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`);
   }
 
   const { data, error } = await query;
 
-  if (error) throw new Error('خطا در دریافت معاملات');
+  if (error) {
+    console.error('Error fetching trades with journal:', error);
+    throw new Error('خطا در دریافت معاملات');
+  }
 
-  return (data || []).map((trade: any) => ({
+  let trades = (data || []).map((trade: any) => ({
     ...trade,
     journal: trade.journal?.[0] || null,
     tags: (trade.tags || []).map((t: any) => t.tag),
@@ -94,6 +109,25 @@ export async function getTradesWithJournal(
       notes: m.notes,
     })),
   }));
+
+  // Apply client-side filters that require journal data
+  if (filters.journalStatus) {
+    trades = trades.filter((t: any) => {
+      const status = t.journal?.status || 'not_started';
+      return status === filters.journalStatus;
+    });
+  }
+
+  if (filters.strategyId) {
+    trades = trades.filter((t: any) => {
+      if (filters.strategyId === 'no_strategy') {
+        return !t.journal?.strategy_id;
+      }
+      return t.journal?.strategy_id === filters.strategyId;
+    });
+  }
+
+  return trades;
 }
 
 export async function getTradeWithJournal(tradeId: string, userId: string): Promise<TradeWithJournal | null> {
@@ -123,17 +157,26 @@ export async function getTradeWithJournal(tradeId: string, userId: string): Prom
   };
 }
 
-export async function getTradeCount(userId: string, accountId?: string): Promise<number> {
+export async function getTradeCount(userId: string, filters: JournalFilters = {}): Promise<number> {
   let query = supabase
     .from('trades')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
 
-  if (accountId) {
-    query = query.eq('account_id', accountId);
+  if (filters.accountId) {
+    query = query.eq('account_id', filters.accountId);
+  }
+
+  if (filters.search) {
+    query = query.or(`symbol.ilike.%${filters.search}%,ticket.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`);
   }
 
   const { count, error } = await query;
-  if (error) return 0;
+  
+  if (error) {
+    console.error('Error counting trades:', error);
+    throw new Error('خطا در شمارش معاملات');
+  }
+  
   return count || 0;
 }

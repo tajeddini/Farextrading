@@ -122,6 +122,7 @@ export interface AnalyticsResult {
   monthlyPnl: TimeAggregatedPnl[];
   symbolPerformance: PerformanceBreakdown[];
   strategyPerformance: PerformanceBreakdown[];
+  setupPerformance: PerformanceBreakdown[];
   sidePerformance: PerformanceBreakdown[];
   accountPerformance: PerformanceBreakdown[];
   phasePerformance: PerformanceBreakdown[];

@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getTradesWithJournal, getTradeCount } from '../../services/tradeJournals';
-import type { TradeWithJournal } from '../../types/database';
+import { getTradesWithJournal, getTradeCount, type JournalFilters } from '../../services/tradeJournals';
+import { getStrategies } from '../../services/strategies';
+import type { TradeWithJournal, Strategy } from '../../types/database';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
@@ -16,6 +17,7 @@ import { Link } from 'react-router-dom';
 export default function JournalPage() {
   const { user } = useAuth();
   const [trades, setTrades] = useState<TradeWithJournal[]>([]);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -27,15 +29,32 @@ export default function JournalPage() {
   const [journalFilter, setJournalFilter] = useState<string>('all');
   const [strategyFilter, setStrategyFilter] = useState<string>('all');
 
+  // Load strategies for filter
+  useEffect(() => {
+    if (user) {
+      getStrategies(user.id)
+        .then(setStrategies)
+        .catch(() => {}); // Non-critical
+    }
+  }, [user]);
+
   const fetchTrades = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
       setError(null);
+
+      const filters: JournalFilters = {
+        search: search.trim() || undefined,
+        journalStatus: journalFilter !== 'all' ? journalFilter : undefined,
+        strategyId: strategyFilter !== 'all' ? strategyFilter : undefined,
+      };
+
       const [tradesData, count] = await Promise.all([
-        getTradesWithJournal(user.id, undefined, page, limit),
-        getTradeCount(user.id),
+        getTradesWithJournal(user.id, filters, page, limit),
+        getTradeCount(user.id, filters),
       ]);
+
       setTrades(tradesData);
       setTotalCount(count);
     } catch (err) {
@@ -43,44 +62,16 @@ export default function JournalPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, page]);
+  }, [user, page, search, journalFilter, strategyFilter]);
 
   useEffect(() => {
     fetchTrades();
   }, [fetchTrades]);
 
-  // Client-side filtering
-  const filteredTrades = useMemo(() => {
-    let result = [...trades];
-
-    if (search.trim()) {
-      const s = search.toLowerCase();
-      result = result.filter(
-        t => t.symbol.toLowerCase().includes(s) ||
-             t.ticket?.toLowerCase().includes(s) ||
-             t.comment?.toLowerCase().includes(s)
-      );
-    }
-
-    if (journalFilter !== 'all') {
-      result = result.filter(t => {
-        const status = t.journal?.status || 'not_started';
-        return status === journalFilter;
-      });
-    }
-
-    if (strategyFilter !== 'all') {
-      result = result.filter(t => {
-        const strategyId = t.journal?.strategy_id;
-        if (strategyFilter === 'no_strategy') {
-          return !strategyId;
-        }
-        return strategyId === strategyFilter;
-      });
-    }
-
-    return result;
-  }, [trades, search, journalFilter, strategyFilter]);
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, journalFilter, strategyFilter]);
 
   const totalPages = Math.ceil(totalCount / limit);
 
@@ -126,13 +117,14 @@ export default function JournalPage() {
             options={[
               { value: 'all', label: 'همه استراتژی‌ها' },
               { value: 'no_strategy', label: 'بدون استراتژی' },
+              ...strategies.map(s => ({ value: s.id, label: s.name })),
             ]}
           />
         </div>
       </Card>
 
       {/* Journal List */}
-      {filteredTrades.length > 0 ? (
+      {trades.length > 0 ? (
         <>
           {/* Desktop Table View */}
           <Card padding={false} className="hidden md:block">
@@ -148,52 +140,62 @@ export default function JournalPage() {
                     <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">احساسات</th>
                     <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">رعایت قوانین</th>
                     <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">وضعیت ژورنال</th>
+                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400">عملیات</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTrades.map((trade) => (
-                    <tr
-                      key={trade.id}
-                      className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    >
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {formatDateTime(trade.entry_datetime)}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                        {trade.symbol}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={trade.side === 'buy' ? 'success' : 'danger'}>
-                          {trade.side === 'buy' ? 'خرید' : 'فروش'}
-                        </Badge>
-                      </td>
-                      <td className={`px-4 py-3 font-medium ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
-                        {trade.profit >= 0 ? '+' : ''}{trade.profit.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                        {trade.journal?.strategy_id ? (
-                          <span className="text-blue-600 dark:text-blue-400">✓</span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                        {trade.journal?.emotion_before || '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        {trade.journal?.rule_adherence && trade.journal.rule_adherence !== 'not_set' ? (
-                          <Badge variant={
-                            trade.journal.rule_adherence === 'followed' ? 'success' :
-                            trade.journal.rule_adherence === 'partially_followed' ? 'warning' : 'danger'
-                          }>
-                            {trade.journal.rule_adherence === 'followed' ? 'رعایت شده' :
-                             trade.journal.rule_adherence === 'partially_followed' ? 'تا حدی' : 'نقض شده'}
+                  {trades.map((trade) => {
+                    const strategyName = strategies.find(s => s.id === trade.journal?.strategy_id)?.name;
+                    return (
+                      <tr
+                        key={trade.id}
+                        className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {formatDateTime(trade.entry_datetime)}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+                          {trade.symbol}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={trade.side === 'buy' ? 'success' : 'danger'}>
+                            {trade.side === 'buy' ? 'خرید' : 'فروش'}
                           </Badge>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <JournalStatusBadge status={trade.journal?.status || 'not_started'} />
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className={`px-4 py-3 font-medium ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
+                          {trade.profit >= 0 ? '+' : ''}{trade.profit.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                          {strategyName || (trade.journal?.strategy_id ? '—' : '—')}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                          {trade.journal?.emotion_before || '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {trade.journal?.rule_adherence && trade.journal.rule_adherence !== 'not_set' ? (
+                            <Badge variant={
+                              trade.journal.rule_adherence === 'followed' ? 'success' :
+                              trade.journal.rule_adherence === 'partially_followed' ? 'warning' : 'danger'
+                            }>
+                              {trade.journal.rule_adherence === 'followed' ? 'رعایت شده' :
+                               trade.journal.rule_adherence === 'partially_followed' ? 'تا حدی' : 'نقض شده'}
+                            </Badge>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <JournalStatusBadge status={trade.journal?.status || 'not_started'} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            to={`/app/trades/${trade.id}`}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
+                          >
+                            مشاهده
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -202,7 +204,7 @@ export default function JournalPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  صفحه {page} از {totalPages}
+                  صفحه {page} از {totalPages} ({totalCount} معامله)
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -228,42 +230,50 @@ export default function JournalPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {filteredTrades.map((trade) => (
-              <Link
-                key={trade.id}
-                to={`/app/trades/${trade.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{trade.symbol}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      {formatDateTime(trade.entry_datetime)}
-                    </p>
+            {trades.map((trade) => {
+              const strategyName = strategies.find(s => s.id === trade.journal?.strategy_id)?.name;
+              return (
+                <Link
+                  key={trade.id}
+                  to={`/app/trades/${trade.id}`}
+                  className="block bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{trade.symbol}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {formatDateTime(trade.entry_datetime)}
+                      </p>
+                    </div>
+                    <Badge variant={trade.side === 'buy' ? 'success' : 'danger'}>
+                      {trade.side === 'buy' ? 'خرید' : 'فروش'}
+                    </Badge>
                   </div>
-                  <Badge variant={trade.side === 'buy' ? 'success' : 'danger'}>
-                    {trade.side === 'buy' ? 'خرید' : 'فروش'}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">سود/زیان</p>
-                    <p className={`text-sm font-bold ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
-                      {trade.profit >= 0 ? '+' : ''}{trade.profit.toFixed(2)}
-                    </p>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">سود/زیان</p>
+                      <p className={`text-sm font-bold ${trade.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
+                        {trade.profit >= 0 ? '+' : ''}{trade.profit.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">وضعیت ژورنال</p>
+                      <JournalStatusBadge status={trade.journal?.status || 'not_started'} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">وضعیت ژورنال</p>
-                    <JournalStatusBadge status={trade.journal?.status || 'not_started'} />
-                  </div>
-                </div>
-                {trade.journal?.emotion_before && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    احساس: {trade.journal.emotion_before}
-                  </div>
-                )}
-              </Link>
-            ))}
+                  {strategyName && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      استراتژی: {strategyName}
+                    </div>
+                  )}
+                  {trade.journal?.emotion_before && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      احساس: {trade.journal.emotion_before}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
 
             {/* Mobile Pagination */}
             {totalPages > 1 && (
