@@ -103,7 +103,7 @@ export async function calculateAnalytics(
       .in('id', accountIds)
       .eq('user_id', userId);
     
-    startingBalance = accounts?.reduce((sum, acc) => sum + acc.initial_balance, 0) || 0;
+    startingBalance = accounts?.reduce((sum: number, acc: any) => sum + acc.initial_balance, 0) || 0;
   }
   
   // Calculate equity curve
@@ -120,6 +120,7 @@ export async function calculateAnalytics(
   // Fetch journal data for strategy analysis
   const tradeIds = classifiedTrades.map(t => t.id);
   let tradesWithJournal = classifiedTrades;
+  let strategyMap = new Map<string, string>();
   
   if (tradeIds.length > 0) {
     const { data: journals } = await supabase
@@ -128,11 +129,24 @@ export async function calculateAnalytics(
       .in('trade_id', tradeIds);
     
     if (journals && journals.length > 0) {
-      const journalMap = new Map(journals.map(j => [j.trade_id, j]));
+      const journalMap = new Map(journals.map((j: any) => [j.trade_id, j]));
       tradesWithJournal = classifiedTrades.map(t => ({
         ...t,
         journal: journalMap.get(t.id) || null,
       }));
+      
+      // Fetch strategy names
+      const strategyIds = [...new Set(journals.map((j: any) => j.strategy_id).filter(Boolean))];
+      if (strategyIds.length > 0) {
+        const { data: strategies } = await supabase
+          .from('strategies')
+          .select('id, name')
+          .in('id', strategyIds as string[]);
+        
+        if (strategies) {
+          strategyMap = new Map(strategies.map((s: any) => [s.id, s.name]));
+        }
+      }
     }
   }
   
@@ -142,11 +156,14 @@ export async function calculateAnalytics(
     t => t.symbol
   );
   
-  // Strategy performance - now with actual journal data
+  // Strategy performance - now with actual journal data and strategy names
   const strategyPerformance = calculatePerformanceBreakdown(
     tradesWithJournal,
     t => (t as any).journal?.strategy_id || 'no_strategy',
-    key => key === 'no_strategy' ? 'بدون استراتژی' : key
+    key => {
+      if (key === 'no_strategy') return 'بدون استراتژی';
+      return strategyMap.get(key) || 'استراتژی ناشناخته';
+    }
   );
   
   const sidePerformance = calculatePerformanceBreakdown(
